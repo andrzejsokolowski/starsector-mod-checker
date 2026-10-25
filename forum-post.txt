@@ -1,0 +1,68 @@
+Subject: [0.98a] Starsector Mod Checker 1.0.0 - find the mod files that crash your game
+
+[center][size=28pt][url=https://github.com/andrzejsokolowski/starsector-mod-checker/releases/latest][b]Starsector Mod Checker[/b][/url][/size]
+[url=https://github.com/andrzejsokolowski/starsector-mod-checker/releases/latest][img]https://img.shields.io/github/downloads/andrzejsokolowski/starsector-mod-checker/total?style=for-the-badge&label=download[/img][/url]  [url=https://github.com/andrzejsokolowski/starsector-mod-checker][img]https://img.shields.io/github/v/release/andrzejsokolowski/starsector-mod-checker?display_name=tag&sort=semver&style=for-the-badge&label=source[/img][/url]
+[/center]
+[center][b]
+WHAT DOES THIS DO?
+It reads every mod you have enabled the way Starsector does when it starts, and lists the files that would crash the game or break something, by mod, folder and file.
+
+It is not a mod: it is a small program you run before playing, and it changes nothing.
+It runs on the Java that comes with the game, so there is nothing to install.
+[/b][/center]
+[center]
+[hr][center][size=12pt][b]How To Use[/b][/size][/center][hr]
+[list]
+[li]Download [b]StarsectorModChecker.zip[/b] and unzip it into your Starsector folder, next to [i]mods[/i] and [i]starsector-core[/i]. Do not put it in the mods folder.[/li]
+[li]Windows: double-click [b]check-mods.bat[/b]. Linux and macOS: run [b]./check-mods.sh[/b] in a terminal.[/li]
+[li]The list shows in the window and is saved as [b]mod-checker-report.txt[/b] next to it.[/li]
+[li]Kept somewhere else? Name your game folder: [b]check-mods.bat "D:\Games\Starsector"[/b][/li]
+[li]Options: [b]--all[/b] checks every mod in the folder, not only enabled ones. [b]--notes[/b] also prints the notes. [b]--out FILE[/b] saves the report elsewhere.[/li]
+[li]Making a mod? Run it before every release.[/li]
+[/list]
+
+[hr][center][size=12pt][b]Reading The Report[/b][/size][/center][hr]
+[/center]
+[code]
+Some Mod  (id some_mod, version 1.2, folder mods/Some Mod-1.2)
+--- data/weapons
+------ broken_gun.wpn
+--------- ERROR: "turretAngleOffsets" has 3 angles but "turretOffsets" only defines 2 barrels (2 numbers each). The game crashes while loading (IndexOutOfBoundsException in addTurretAngleOffset). Give each barrel exactly one angle.
+[/code]
+[center]
+[list]
+[li][b]ERROR:[/b] the game crashes or will not start because of it.[/li]
+[li][b]WARNING:[/b] can crash the game or break something once that ship, weapon or event shows up.[/li]
+[li][b]NOTE:[/b] works, but looks like a mistake. In the saved report, and on screen with --notes.[/li]
+[/list]
+Every line ends with the game's own error text in brackets, so you can match it to a crash in starsector.log and see which mod to blame.
+
+[hr][center][size=12pt][b]What It Checks[/b][/size][/center][hr]
+[list]
+[li]Files the game cannot read: a missing comma, // comments, a key written twice, an invisible UTF-8 BOM, an unclosed quote or the same id twice in a CSV sheet.[/li]
+[li]Weapons: barrel lists (more angles than barrels crashes at startup, more hardpoint barrels than turret barrels crashes in hidden slots), required fields, allowed values, missing art and animation frames, and the projectile they fire.[/li]
+[li]Projectiles, hulls, skins, ship systems and variants: required fields, allowed values, missing art, and every weapon, hull, hull mod, fighter wing and variant they name.[/li]
+[li]The sheets the game reads by id: ship_data, weapon_data, wing_data, hull_mods, ship_systems, descriptions and the campaign sheets.[/li]
+[li]Classes named in data files and the jars each mod lists, including jars built for a newer Java than your game runs.[/li]
+[li]Ids written into the mods' code, such as getWeaponSpec("some_id"), that no file defines.[/li]
+[li]Files in folders the game never reads, mods unzipped one folder too deep, two copies of one mod, and enabled mods that are not installed.[/li]
+[li]File names whose upper and lower case only work on Windows, which breaks the mod for Linux and macOS players.[/li]
+[/list]
+The rules come from Starsector 0.98a's own loading code. A clean report does not promise a crash-free game: a mod's code can still fail in ways no file shows.
+[/center]
+
+[spoiler=AI use disclaimer]Some or all assets and code in this mod were created using AI tools:
+[list]
+[li]Code: Claude Code (Claude Opus 5.5)[/li]
+[li]Text (readme and this post): Claude Code (Claude Opus 5.5)[/li][/list]
+[/spoiler]
+
+[spoiler=License]
+This mod is under the CC0 (Creative Commons Zero) License, allowing you to do whatever you want with the code, without giving any credit to anyone.
+The ASM library bundled inside mod-checker.jar keeps its own BSD licence (LICENSE-ASM.txt in the download).
+[/spoiler]
+
+[spoiler=Version log]
+[b]1.0.0[/b]
+[list][li]First release.[/li][/list]
+[/spoiler]

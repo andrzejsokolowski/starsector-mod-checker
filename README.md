@@ -12,6 +12,8 @@ United Aurora Federation  (id uaf, version 0.8.4c, folder mods/United Aurora Fed
 
 The report is printed and saved as `mod-checker-report.txt`. It changes no files.
 
+Forum topic: https://fractalsoftworks.com/forum/index.php?topic=36202.0
+
 ## Install and run
 
 1. Download `StarsectorModChecker.zip` from the latest release and unzip it.
