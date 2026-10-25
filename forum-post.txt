@@ -1,4 +1,4 @@
-Subject: [0.98a] Starsector Mod Checker 1.0.0 - find the mod files that crash your game
+Subject: [0.98a] Starsector Mod Checker 1.0.1 - find the mod files that crash your game
 
 [center][size=28pt][url=https://github.com/andrzejsokolowski/starsector-mod-checker/releases/latest][b]Starsector Mod Checker[/b][/url][/size]
 [url=https://github.com/andrzejsokolowski/starsector-mod-checker/releases/latest][img]https://img.shields.io/github/downloads/andrzejsokolowski/starsector-mod-checker/total?style=for-the-badge&label=download[/img][/url]  [url=https://github.com/andrzejsokolowski/starsector-mod-checker][img]https://img.shields.io/github/v/release/andrzejsokolowski/starsector-mod-checker?display_name=tag&sort=semver&style=for-the-badge&label=source[/img][/url]
@@ -16,8 +16,8 @@ It runs on the Java that comes with the game, so there is nothing to install.
 [li]Download [b]StarsectorModChecker.zip[/b] and unzip it into your Starsector folder, next to [i]mods[/i] and [i]starsector-core[/i]. Do not put it in the mods folder.[/li]
 [li]Windows: double-click [b]check-mods.bat[/b]. Linux and macOS: run [b]./check-mods.sh[/b] in a terminal.[/li]
 [li]The list shows in the window and is saved as [b]mod-checker-report.txt[/b] next to it.[/li]
-[li]Kept somewhere else? Name your game folder: [b]check-mods.bat "D:\Games\Starsector"[/b][/li]
-[li]Options: [b]--all[/b] checks every mod in the folder, not only enabled ones. [b]--notes[/b] also prints the notes. [b]--out FILE[/b] saves the report elsewhere.[/li]
+[li]Kept somewhere else? Drag your Starsector folder onto [b]check-mods.bat[/b]. If it cannot find the game, it asks: drag the folder into its window and press Enter.[/li]
+[li]Options, when you run it from a terminal: [b]--all[/b] checks every mod in the folder, not only enabled ones. [b]--notes[/b] also prints the notes. [b]--out FILE[/b] saves the report elsewhere.[/li]
 [li]Making a mod? Run it before every release.[/li]
 [/list]
 
@@ -63,6 +63,9 @@ The ASM library bundled inside mod-checker.jar keeps its own BSD licence (LICENS
 [/spoiler]
 
 [spoiler=Version log]
+[b]1.0.1[/b]
+[list][li]If it cannot find your Starsector folder, it asks for it: drag the folder into the window and press Enter.[/li]
+[li]The window says "Press any key to close this window" when it is done.[/li][/list]
 [b]1.0.0[/b]
 [list][li]First release.[/li][/list]
 [/spoiler]

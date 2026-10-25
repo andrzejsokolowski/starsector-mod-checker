@@ -1,4 +1,4 @@
-Starsector Mod Checker 1.0.0
+Starsector Mod Checker 1.0.1
 ============================
 
 Finds the mod files that crash Starsector or break it, before you play. It reads
@@ -18,13 +18,14 @@ Use
 Windows:        double-click check-mods.bat
 Linux, macOS:   run ./check-mods.sh in a terminal
 
-If the folder is somewhere else, name your Starsector folder:
-    check-mods.bat "D:\Games\Starsector"
-    ./check-mods.sh /Applications/Starsector.app
+If the StarsectorModChecker folder is somewhere else, drag your Starsector
+folder onto check-mods.bat. If it still cannot find the game, it asks for the
+folder: drag the folder into its window and press Enter.
 
-The report is printed and saved as mod-checker-report.txt in this folder.
+The report is printed and saved as mod-checker-report.txt in this folder. The
+window then waits for a key before it closes.
 
-Options:
+Options, when you run it from a terminal:
     --all        check every mod in the mods folder, not only the enabled ones
     --notes      also print the notes (the saved report always has them)
     --out FILE   save the report somewhere else

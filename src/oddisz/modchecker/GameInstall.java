@@ -44,7 +44,10 @@ final class GameInstall {
         return null;
     }
 
-    /** Uses the given folder if any; otherwise looks above the tool's own folder, then common install places. */
+    /**
+     * Uses the given folder if any; otherwise looks above the tool's own folder, then the places the
+     * official installers use. When nothing is found the launchers ask the player for the folder.
+     */
     static GameInstall locate(String given, Path toolDir) {
         if (given != null) {
             return at(Paths.get(stripQuotes(given)));
@@ -57,12 +60,10 @@ final class GameInstall {
         String home = System.getProperty("user.home", "");
         guesses.add(Paths.get("C:/Program Files (x86)/Fractal Softworks/Starsector"));
         guesses.add(Paths.get("C:/Program Files/Fractal Softworks/Starsector"));
-        guesses.add(Paths.get("C:/Games/Starsector"));
-        guesses.add(Paths.get("D:/Games/Starsector"));
         guesses.add(Paths.get("/Applications/Starsector.app"));
-        guesses.add(Paths.get(home, "Starsector"));
-        guesses.add(Paths.get(home, "Games", "Starsector"));
+        guesses.add(Paths.get(home, "Applications", "Starsector.app"));
         guesses.add(Paths.get(home, "starsector"));
+        guesses.add(Paths.get(home, "Starsector"));
         for (Path guess : guesses) {
             GameInstall found = at(guess);
             if (found != null) return found;

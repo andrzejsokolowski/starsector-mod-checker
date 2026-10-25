@@ -13,7 +13,9 @@ import java.nio.file.Paths;
  * loaded before json.jar is on the class path.
  */
 public final class Main {
-    public static final String VERSION = "1.0.0";
+    public static final String VERSION = "1.0.1";
+    /** Exit code when no Starsector folder was found: the launchers then ask the player for it. */
+    static final int GAME_NOT_FOUND = 3;
 
     private Main() {
     }
@@ -41,12 +43,13 @@ public final class Main {
             System.out.println();
             if (options.gamePath != null) {
                 System.out.println("This is not a Starsector folder: " + options.gamePath);
+                System.out.println("The Starsector folder is the one with starsector-core and mods in it.");
             } else {
                 System.out.println("Could not find your Starsector folder.");
+                System.out.println("Put the StarsectorModChecker folder inside your Starsector folder,");
+                System.out.println("or drag your Starsector folder onto check-mods.bat.");
             }
-            System.out.println("Put the StarsectorModChecker folder inside your Starsector folder, or run:");
-            System.out.println("  check-mods \"C:\\path\\to\\Starsector\"");
-            System.exit(2);
+            System.exit(GAME_NOT_FOUND);
             return;
         }
 

@@ -20,9 +20,10 @@ Forum topic: https://fractalsoftworks.com/forum/index.php?topic=36202.0
 2. Put the `StarsectorModChecker` folder inside your Starsector folder.
 3. Windows: double-click `check-mods.bat`. Linux and macOS: run `./check-mods.sh`.
 
-It uses the Java that comes with the game. From anywhere else, name the game folder:
-`check-mods.bat "D:\Games\Starsector"`. Options: `--all` (every mod, not only enabled ones),
-`--notes`, `--out FILE`, `--no-report`.
+It uses the Java that comes with the game. If the folder is somewhere else, drag your Starsector
+folder onto `check-mods.bat`. If it still can't find the game, it asks for the folder in its
+window: drag the folder in and press Enter. Options, from a terminal: `--all` (every mod, not
+only enabled ones), `--notes`, `--out FILE`, `--no-report`.
 
 ## Levels
 

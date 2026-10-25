@@ -15,7 +15,8 @@ final class Options {
             "  --no-report       print to the terminal only",
             "  --help            show this text",
             "",
-            "Exit code: 0 when no errors were found, 1 when there are errors, 2 when the check could not run.");
+            "Exit code: 0 when no errors were found, 1 when there are errors, 2 when the options are wrong,",
+            "3 when no Starsector folder was found.");
 
     String gamePath;
     String outPath;
