@@ -1,0 +1,97 @@
+plugins {
+    id 'java'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    // Starsector 0.98a ships Java 17, and the tool runs on the game's own Java.
+    options.release = 17
+}
+
+sourceSets.main.java.srcDirs = ['src']
+sourceSets.test.java.srcDirs = ['test']
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // The game's own JSON library. Compiled against, never packaged: at run time the tool loads it
+    // from the player's install, so files are parsed by exactly the code the game uses.
+    compileOnly files("${starsectorPath}/starsector-core/json.jar")
+    testImplementation files("${starsectorPath}/starsector-core/json.jar")
+
+    // Reads the mods' class files for ids written into their code. Bundled into the jar (BSD licence).
+    implementation 'org.ow2.asm:asm:9.7.1'
+    implementation 'org.ow2.asm:asm-tree:9.7.1'
+    implementation 'org.ow2.asm:asm-analysis:9.7.1'
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events 'failed'
+        exceptionFormat 'full'
+    }
+}
+
+jar {
+    archiveFileName = 'mod-checker.jar'
+    manifest {
+        attributes 'Main-Class': 'oddisz.modchecker.Main'
+    }
+    // One jar for players: ASM goes inside, json.jar stays in the game folder.
+    dependsOn configurations.runtimeClasspath
+    from({ configurations.runtimeClasspath.collect { zipTree(it) } }) {
+        exclude 'module-info.class', 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/MANIFEST.MF'
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+/** Main.VERSION, which the tool prints, must match the release version. */
+tasks.register('checkVersion') {
+    doLast {
+        def source = file('src/oddisz/modchecker/Main.java').getText('UTF-8')
+        def match = source =~ /VERSION = "([^"]+)"/
+        if (!match.find() || match.group(1) != checkerVersion)
+            throw new GradleException("Main.VERSION must be ${checkerVersion} (gradle.properties checkerVersion)")
+    }
+}
+
+def stagingDir = file('StarsectorModChecker')
+
+/** The folder players unzip: the jar, the launchers and the readme. Nothing else. */
+tasks.register('stage', Sync) {
+    dependsOn tasks.named('jar'), tasks.named('checkVersion')
+    from(tasks.named('jar'))
+    from('launch') {
+        include 'check-mods.bat', 'check-mods.sh', 'README.txt', 'LICENSE-ASM.txt'
+        filteringCharset = 'UTF-8'
+    }
+    into stagingDir
+    doLast {
+        // Unix launchers need the execute bit inside the ZIP as well.
+        file("${stagingDir}/check-mods.sh").setExecutable(true, false)
+    }
+}
+
+tasks.register('releaseZip', Zip) {
+    dependsOn tasks.named('test'), tasks.named('stage')
+    from(stagingDir) {
+        into 'StarsectorModChecker'
+        eachFile { details ->
+            if (details.name.endsWith('.sh')) details.permissions { unix('rwxr-xr-x') }
+        }
+    }
+    archiveFileName = 'StarsectorModChecker.zip'
+    destinationDirectory = projectDir
+}
