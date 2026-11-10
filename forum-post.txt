@@ -1,4 +1,5 @@
-[center][size=28pt][url=https://github.com/andrzejsokolowski/starsector-mod-checker/releases/latest][b]Starsector Mod Checker[/b][/url][/size]
+[center][img width=128]https://raw.githubusercontent.com/andrzejsokolowski/starsector-mod-checker/main/icon.png[/img]
+[size=28pt][url=https://github.com/andrzejsokolowski/starsector-mod-checker/releases/latest][b]Starsector Mod Checker[/b][/url][/size]
 [url=https://github.com/andrzejsokolowski/starsector-mod-checker/releases/latest][img]https://img.shields.io/github/downloads/andrzejsokolowski/starsector-mod-checker/total?style=for-the-badge&label=download[/img][/url]  [url=https://github.com/andrzejsokolowski/starsector-mod-checker][img]https://img.shields.io/github/v/release/andrzejsokolowski/starsector-mod-checker?display_name=tag&sort=semver&style=for-the-badge&label=source[/img][/url]
 [/center]
 [center][b]

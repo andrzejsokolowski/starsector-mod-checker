@@ -1,5 +1,8 @@
 # Starsector Mod Checker
 
+<img src="icon.png" width="128" alt="Starsector Mod Checker icon">
+
+
 Finds the mod files that crash Starsector 0.98a or break it, before you play. It reads every
 enabled mod the way the game does and lists what is wrong, grouped by mod, folder and file:
 
