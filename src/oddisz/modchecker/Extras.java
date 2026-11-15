@@ -31,7 +31,7 @@ final class Extras {
             "data/world/factions/default_ranks.json", "data/strings/strings.json", "data/strings/tips.json",
             "data/strings/ship_names.json");
     /** Sheets read at startup with the game's CSV reader but not by id. */
-    private static final Set<String> OTHER_SHEETS = Enums.of("data/campaign/rules.csv", "data/config/lunasettings.csv",
+    private static final Set<String> OTHER_SHEETS = Enums.of("data/config/lunasettings.csv",
             "data/config/version/version_files.csv");
 
     private final Checker c;
@@ -68,7 +68,7 @@ final class Extras {
     private boolean gameReads(String lower, String suffix) {
         if (suffix.equals("faction")) return c.factionFiles.contains(lower);
         if (suffix.equals("json")) return CORE_JSON.contains(lower);
-        if (suffix.equals("csv")) return Sheets.isKnown(lower) || OTHER_SHEETS.contains(lower);
+        if (suffix.equals("csv")) return Sheets.isKnown(lower) || OTHER_SHEETS.contains(lower) || c.rulesFiles.contains(lower);
         return loadedSpec(lower, suffix);
     }
 
@@ -165,7 +165,8 @@ final class Extras {
     // ---------------------------------------------------------------- CSV files
 
     private void csv(Source source, String rel, String lower) {
-        if (Sheets.isKnown(lower)) {
+        if (Sheets.isKnown(lower) || c.rulesFiles.contains(lower)) {
+            // Read by id in Sheets, which already reported the file's own errors.
             scanCells(source, rel, true);
             return;
         }
@@ -177,7 +178,9 @@ final class Extras {
             else f.warning(t.error + ". If the game or a mod reads this sheet, it crashes (Mismatched quotes in the string).");
             return;
         }
-        if (t.bom && !t.rows.isEmpty()) {
+        if (t.bom && !t.rows.isEmpty() && c.v0985) {
+            f.warning(Checker.BOM_SKIPPED);
+        } else if (t.bom && !t.rows.isEmpty()) {
             f.warning("The file starts with a UTF-8 BOM (an invisible marker some editors add), so the first column is read"
                     + " as \"\\uFEFF" + t.header.get(0) + "\" instead of \"" + t.header.get(0) + "\". Save it as UTF-8 without BOM.");
         }

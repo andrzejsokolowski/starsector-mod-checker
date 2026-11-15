@@ -38,16 +38,16 @@ Every line ends with the game's own error text in brackets, so you can match it 
 
 [hr][center][size=12pt][b]What It Checks[/b][/size][/center][hr]
 [list]
-[li]Files the game cannot read: a missing comma, // comments, a key written twice, an invisible UTF-8 BOM, an unclosed quote or the same id twice in a CSV sheet.[/li]
+[li]Files the game cannot read: a missing comma, // comments, a key written twice, an unclosed quote or the same id twice in a CSV sheet. An invisible UTF-8 BOM is an error on 0.98a and a warning on 0.98.5a, which skips it.[/li]
 [li]Weapons: barrel lists (more angles than barrels crashes at startup, more hardpoint barrels than turret barrels crashes in hidden slots), required fields, allowed values, missing art and animation frames, and the projectile they fire.[/li]
 [li]Projectiles, hulls, skins, ship systems and variants: required fields, allowed values, missing art, and every weapon, hull, hull mod, fighter wing and variant they name.[/li]
-[li]The sheets the game reads by id: ship_data, weapon_data, wing_data, hull_mods, ship_systems, descriptions and the campaign sheets.[/li]
+[li]The sheets the game reads by id: ship_data, weapon_data, wing_data, hull_mods, ship_systems, descriptions, the campaign sheets and the rules (dialog) files.[/li]
 [li]Classes named in data files and the jars each mod lists, including jars built for a newer Java than your game runs.[/li]
 [li]Ids written into the mods' code, such as getWeaponSpec("some_id"), that no file defines.[/li]
 [li]Files in folders the game never reads, mods unzipped one folder too deep, two copies of one mod, and enabled mods that are not installed.[/li]
 [li]File names whose upper and lower case only work on Windows, which breaks the mod for Linux and macOS players.[/li]
 [/list]
-The rules come from Starsector 0.98a's own loading code. A clean report does not promise a crash-free game: a mod's code can still fail in ways no file shows.
+The rules come from the loading code of Starsector 0.98.5a and 0.98a: it reads your game version and follows its rules. A clean report does not promise a crash-free game: a mod's code can still fail in ways no file shows.
 [/center]
 
 [spoiler=AI use disclaimer]Some or all assets and code in this mod were created using AI tools:
@@ -62,6 +62,16 @@ The ASM library bundled inside mod-checker.jar keeps its own BSD licence (LICENS
 [/spoiler]
 
 [spoiler=Version log]
+[b]1.1.0[/b]
+[list][li]Updated for Starsector 0.98.5a.[/li]
+[li]Reads the game version from your install and follows the rules of that version. 0.98a still works.[/li]
+[li]Checks every rules file the new settings.json "rules" list names, and warns about a listed file that does not exist.[/li]
+[li]Rules files: the same rule id twice in one file, a missing trigger, conditions, options or script column, and the same rule in two listed files are reported as crashes.[/li]
+[li]On 0.98.5a a UTF-8 BOM is a warning instead of an error, since the game now skips it.[/li]
+[li]Checks the new parts/dmod and salary columns in ship_data.csv and skins.[/li]
+[li]Knows the new hints DO_NOT_TURN_TO_ARMOR and RENDER_MISSILES_BELOW, so the base game Dominator and Brawler are no longer reported.[/li]
+[li]Merges lists that start with core_clearArray the 0.98.5a way, without the core_clearArray entry.[/li]
+[li]The report names the game version it checked.[/li][/list]
 [b]1.0.1[/b]
 [list][li]If it cannot find your Starsector folder, it asks for it: drag the folder into the window and press Enter.[/li]
 [li]The window says "Press any key to close this window" when it is done.[/li][/list]

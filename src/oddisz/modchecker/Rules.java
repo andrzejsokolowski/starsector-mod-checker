@@ -310,7 +310,7 @@ final class Rules {
             c.claimRef(s.owner, s.path, value);
             art.add(() -> c.checkFile(s.owner, s.path, key, value, Report.Severity.ERROR, MISSING_ART));
         }
-        f.enumList(o, "renderHints", Enums.RENDER_HINT, "", false);
+        f.enumList(o, "renderHints", Enums.renderHints(c.v0985), "", false);
         barrels(f, s, o, id, "DECORATIVE".equals(type));
         art.add(() -> animationFrames(f, o, turret, hardpoint));
 
@@ -634,6 +634,11 @@ final class Rules {
                 "ordnancePoints", "baseValue", "maxSpeed", "shieldEfficiency", "baseValueMult"}) {
             if (o.has(k)) f.requireNumber(o, k, "");
         }
+        if (c.v0985) {
+            // 0.98.5a (ShipHullSpecLoader): "parts/dmod" is read with getInt when present, "salary" when not blank.
+            if (o.has("parts/dmod")) f.requireNumber(o, "parts/dmod", "");
+            if (o.has("salary") && !o.optString("salary").isBlank()) f.requireNumber(o, "salary", "");
+        }
         JSONArray removeSlots = o.optJSONArray("removeWeaponSlots");
         for (int i = 0; removeSlots != null && i < removeSlots.length(); i++) {
             String slot = removeSlots.optString(i, "");
@@ -643,8 +648,8 @@ final class Rules {
         }
         JSONArray removeEngines = o.optJSONArray("removeEngineSlots");
         if (removeEngines != null) f.allNumbers(removeEngines, "removeEngineSlots", "");
-        f.enumList(o, "removeHints", Enums.SHIP_HINT, "", true);
-        f.enumList(o, "addHints", Enums.SHIP_HINT, "", true);
+        f.enumList(o, "removeHints", Enums.shipHints(c.v0985), "", true);
+        f.enumList(o, "addHints", Enums.shipHints(c.v0985), "", true);
         JSONObject slotChanges = o.optJSONObject("weaponSlotChanges");
         if (slotChanges != null) {
             for (String slot : keys(slotChanges)) {

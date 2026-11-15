@@ -1,6 +1,7 @@
 package oddisz.modchecker;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -9,6 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * Where the game lives. Windows keeps the game files in starsector-core, Linux in the install folder
@@ -73,7 +76,7 @@ final class GameInstall {
 
     /**
      * The Java version the game runs on, read from the bundled runtime's release file. Players who swap
-     * in a newer runtime get that runtime's version. Falls back to 17, the version 0.98a ships with.
+     * in a newer runtime get that runtime's version. Falls back to 17, the version 0.98a and 0.98.5a ship with.
      */
     int javaVersion() {
         for (Path release : new Path[] {root.resolve("jre/release"), root.resolve("jre_linux/release"),
@@ -88,6 +91,41 @@ final class GameInstall {
             }
         }
         return 17;
+    }
+
+    /**
+     * The game version, such as "0.98.5a-RC6", read from com.fs.starfarer.Version in starfarer_obf.jar
+     * (its versionString constant "Starsector 0.98.5a-RC6"). Null when the jar cannot be read.
+     */
+    String version() {
+        Path jar = core.resolve("starfarer_obf.jar");
+        if (!Files.isRegularFile(jar)) return null;
+        try (ZipFile zip = new ZipFile(jar.toFile())) {
+            ZipEntry entry = zip.getEntry("com/fs/starfarer/Version.class");
+            if (entry == null) return null;
+            try (InputStream in = zip.getInputStream(entry)) {
+                String text = new String(in.readAllBytes(), StandardCharsets.ISO_8859_1);
+                Matcher m = Pattern.compile("Starsector (\\d+\\.\\d+(?:\\.\\d+)?[a-z]?(?:-RC\\d+)?)").matcher(text);
+                return m.find() ? m.group(1) : null;
+            }
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Whether a version is 0.98.5a or newer, where the loaders changed (byte-order marks skipped, the
+     * settings.json "rules" list, core_clearArray no longer kept in the list, new ship_data columns).
+     * An unknown version counts as new: the checker follows the newest game it knows.
+     */
+    static boolean atLeast0985(String version) {
+        if (version == null) return true;
+        Matcher m = Pattern.compile("^(\\d+)\\.(\\d+)(?:\\.(\\d+))?").matcher(version);
+        if (!m.find()) return true;
+        int[] have = {Integer.parseInt(m.group(1)), Integer.parseInt(m.group(2)), m.group(3) == null ? 0 : Integer.parseInt(m.group(3))};
+        int[] need = {0, 98, 5};
+        for (int i = 0; i < 3; i++) if (have[i] != need[i]) return have[i] > need[i];
+        return true;
     }
 
     private static String stripQuotes(String s) {

@@ -36,6 +36,13 @@ public final class Checker {
     final Report report = new Report();
     final boolean caseSensitiveFiles;
     final int javaVersion;
+    /** The game's own version text, such as "0.98.5a-RC6", or null when it could not be read. */
+    final String gameVersion;
+    /**
+     * 0.98.5a or newer: a leading BOM is skipped, settings.json "rules" lists the rules files, the
+     * core_clearArray marker is no longer kept in merged lists, and ship_data.csv has new columns.
+     */
+    final boolean v0985;
     Source core;
     List<Source> sources;
     ModList mods;
@@ -47,6 +54,12 @@ public final class Checker {
     /** File references already checked by a specific rule, so the general scan does not repeat them. */
     final Set<String> checkedRefs = new LinkedHashSet<>();
     private final Set<String> reportedBroken = new LinkedHashSet<>();
+    private final Set<String> reportedBom = new LinkedHashSet<>();
+
+    /** A BOM that the game (0.98.5a and newer) skips. */
+    static final String BOM_SKIPPED = "The file starts with a UTF-8 BOM (an invisible marker some editors add). Starsector"
+            + " 0.98.5a skips it, but Starsector 0.98a and other programs that read mod files may not. Save it as UTF-8"
+            + " without BOM.";
 
     final Map<String, Spec> projectiles = new LinkedHashMap<>();
     final Map<String, Spec> weapons = new LinkedHashMap<>();
@@ -70,6 +83,8 @@ public final class Checker {
     final Set<String> skillIds = new LinkedHashSet<>();
     /** The .faction files factions.csv lists: only those load. Lower case paths. */
     final Set<String> factionFiles = new LinkedHashSet<>();
+    /** The rules files the game reads (lower case paths): rules.csv, and in 0.98.5a the settings.json "rules" list. */
+    final Set<String> rulesFiles = new LinkedHashSet<>();
     /** The ids each keyed sheet ends up with, by lower case path. */
     final Map<String, Set<String>> sheetIds = new HashMap<>();
     CodeScan codeScan;
@@ -80,6 +95,8 @@ public final class Checker {
         String os = System.getProperty("os.name", "").toLowerCase(Locale.ROOT);
         this.caseSensitiveFiles = !os.contains("win");
         this.javaVersion = game.javaVersion();
+        this.gameVersion = game.version();
+        this.v0985 = GameInstall.atLeast0985(gameVersion);
     }
 
     /** Called by Main through the class loader that holds json.jar. */
@@ -111,7 +128,8 @@ public final class Checker {
     String header() {
         String nl = System.lineSeparator();
         return "Starsector Mod Checker " + Main.VERSION + nl
-                + "Game folder: " + game.root + "  (runs Java " + javaVersion + ")" + nl
+                + "Game folder: " + game.root + "  (Starsector " + (gameVersion == null ? "version unknown" : gameVersion)
+                + ", runs Java " + javaVersion + ")" + nl
                 + "Checked " + Report.plural(mods.enabled.size(), options.allMods ? "mod" : "enabled mod")
                 + " (" + Report.plural(files.fileCount(), "file") + ", including the base game)." + nl
                 + (codeScan == null ? "" : "Read " + Report.plural(codeScan.classesRead, "class") + " in the mods' jars and checked "
@@ -119,7 +137,7 @@ public final class Checker {
     }
 
     void check() throws IOException {
-        mods = ModList.scan(game.mods, options.allMods, report);
+        mods = ModList.scan(game.mods, options.allMods, report, v0985);
         core = new Source("Starsector (base game files)", game.core, null);
         sources = new ArrayList<>(mods.enabled);
         sources.add(core);
@@ -149,7 +167,7 @@ public final class Checker {
         GameCsv.Table t = csvCache.get(key);
         if (t == null) {
             byte[] data = bytes(source, rel);
-            t = data == null ? new GameCsv.Table() : GameCsv.parse(data);
+            t = data == null ? new GameCsv.Table() : GameCsv.parse(data, v0985);
             csvCache.put(key, t);
         }
         return t;
@@ -205,12 +223,15 @@ public final class Checker {
                 p = new GameJson.Parsed();
                 p.error = "the file cannot be opened";
             } else {
-                p = GameJson.parse(data);
+                p = GameJson.parse(data, v0985);
             }
             parseCache.put(key, p);
         }
+        if (p.object != null && p.bom && reportedBom.add(key) && !source.isCore()) {
+            report.warning(source, rel, BOM_SKIPPED);
+        }
         if (p.object == null && ifBroken != null && reportedBroken.add(key)) {
-            String why = p.bom
+            String why = p.bom && !v0985
                     ? "The file starts with a UTF-8 BOM (an invisible marker some editors add), which the game cannot read."
                     + " Save it as UTF-8 without BOM."
                     : "The game cannot read this file: " + GameJson.cleanError(p.error) + ModList.where(p.errorLine) + ".";
@@ -260,7 +281,7 @@ public final class Checker {
                 if (overlay == null) continue;
                 List<String> conflicts = new ArrayList<>();
                 try {
-                    GameJson.merge(master, overlay, "", conflicts);
+                    GameJson.merge(master, overlay, "", conflicts, v0985);
                 } catch (JSONException e) {
                     conflicts.add(e.getMessage());
                 }

@@ -187,15 +187,129 @@ class CheckerTest {
         assertTrue(r.problems().stream().noneMatch(p -> p.path().endsWith("hash.wpn") && p.severity() != Report.Severity.NOTE), dump(r));
     }
 
+    private static byte[] withBom(String text) throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        out.write(new byte[] {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+        out.write(text.getBytes(StandardCharsets.UTF_8));
+        return out.toByteArray();
+    }
+
     @Test
-    void bomIsAnError() throws Exception {
-        byte[] text = Fixture.weapon("bom", "1,0", "0", "1,0", "0").getBytes(StandardCharsets.UTF_8);
-        ByteArrayOutputStream withBom = new ByteArrayOutputStream();
-        withBom.write(new byte[] {(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
-        withBom.write(text);
-        Fixture.bytes(mod, "data/weapons/bom.wpn", withBom.toByteArray());
+    void bomIsAnErrorOn098a() throws Exception {
+        game.version("0.98a-RC8");
+        Fixture.bytes(mod, "data/weapons/bom.wpn", withBom(Fixture.weapon("bom", "1,0", "0", "1,0", "0")));
+        Fixture.bytes(mod, "data/hulls/wing_data.csv", withBom(Fixture.WING_HEADER + "w,v,,V,1,FIGHTER,x,5\n"));
         Report r = game.run();
-        assertNotNull(find(r, Report.Severity.ERROR, "UTF-8 BOM"), dump(r));
+        assertNotNull(find(r, Report.Severity.ERROR, "UTF-8 BOM (an invisible marker some editors add), which the game cannot read"), dump(r));
+        assertNotNull(find(r, Report.Severity.ERROR, "so the game reads the first column name"), dump(r));
+    }
+
+    @Test
+    void bomIsOnlyAWarningOn0985() throws Exception {
+        // 0.98.5a's text reader (LoadingUtils) drops a leading BOM from every JSON and CSV file it reads.
+        Fixture.bytes(mod, "data/weapons/bom.wpn", withBom(Fixture.weapon("bom", "1,0", "0", "1,0", "0")));
+        Fixture.bytes(mod, "data/weapons/weapon_data.csv", withBom(Fixture.WEAPON_HEADER + "Test,bom,0,KINETIC,\n"));
+        Fixture.bytes(mod, "mod_info.json", withBom("{\"id\":\"testmod\",\"name\":\"testmod\",\"description\":\"d\",\"version\":\"1.0\","
+                + "\"gameVersion\":\"0.98.5a-RC6\"}"));
+        Report r = game.run();
+        assertTrue(of(r, Report.Severity.ERROR).isEmpty(), dump(r));
+        long bomWarnings = r.problems().stream()
+                .filter(p -> p.severity() == Report.Severity.WARNING && p.message().contains("0.98.5a skips it")).count();
+        assertEquals(3, bomWarnings, dump(r));
+        // The weapon is read through the BOM, so it keeps its weapon_data.csv row.
+        assertNull(find(r, Report.Severity.NOTE, "so the game drops this weapon"), dump(r));
+    }
+
+    @Test
+    void clearArrayMarkerIsDroppedFrom0985Lists() throws Exception {
+        org.json.JSONObject overlay = new org.json.JSONObject("{\"list\":[\"core_clearArray\",\"b\"]}");
+        org.json.JSONObject master = new org.json.JSONObject("{\"list\":[\"a\"]}");
+        GameJson.merge(master, overlay, "", new java.util.ArrayList<>(), true);
+        assertEquals("[\"b\"]", master.getJSONArray("list").toString());
+        master = new org.json.JSONObject("{\"list\":[\"a\"]}");
+        GameJson.merge(master, overlay, "", new java.util.ArrayList<>(), false);
+        assertEquals("[\"core_clearArray\",\"b\"]", master.getJSONArray("list").toString());
+    }
+
+    @Test
+    void settingsRulesListIsReadOn0985() throws Exception {
+        Fixture.file(mod, "data/config/settings.json", "{\"rules\":[\"data/campaign/rules/extra.csv\","
+                + "\"data/campaign/rules/missing.csv\"]}");
+        Fixture.file(mod, "data/campaign/rules/extra.csv", Fixture.RULES_HEADER
+                + "modA,OpenInteractionDialog,,,Hi.,,\nmodA,OpenInteractionDialog,,,Again.,,\n"
+                + "coreGreeting,OpenInteractionDialog,,,Copy.,,\n");
+        Report r = game.run();
+        assertNotNull(find(r, Report.Severity.ERROR, "\"modA\" appears twice in this file"), dump(r));
+        Report.Problem dup = find(r, Report.Severity.ERROR, "Duplicate rule id: coreGreeting");
+        assertNotNull(dup, dump(r));
+        assertEquals("data/campaign/rules/extra.csv", dup.path());
+        Report.Problem missing = find(r, Report.Severity.WARNING, "names \"data/campaign/rules/missing.csv\"");
+        assertNotNull(missing, dump(r));
+        assertEquals("data/config/settings.json", missing.path());
+    }
+
+    @Test
+    void settingsRulesListIsIgnoredOn098a() throws Exception {
+        game.version("0.98a-RC8");
+        Fixture.file(mod, "data/config/settings.json", "{\"rules\":[\"data/campaign/rules/extra.csv\"]}");
+        Fixture.file(mod, "data/campaign/rules/extra.csv", Fixture.RULES_HEADER
+                + "modA,OpenInteractionDialog,,,Hi.,,\nmodA,OpenInteractionDialog,,,Again.,,\n");
+        Fixture.file(mod, "data/campaign/rules.csv", Fixture.RULES_HEADER + "modB,OpenInteractionDialog,,,Hi.,,\n"
+                + "modB,OpenInteractionDialog,,,Again.,,\nshort,OpenInteractionDialog\n");
+        Report r = game.run();
+        assertNull(find(r, Report.Severity.ERROR, "\"modA\" appears twice"), dump(r));
+        // rules.csv itself was always read by id: a repeated id and a row without the later columns crash.
+        assertNotNull(find(r, Report.Severity.ERROR, "\"modB\" appears twice in this file"), dump(r));
+        assertNotNull(find(r, Report.Severity.ERROR, "has no \"conditions\" column"), dump(r));
+    }
+
+    @Test
+    void partsPerDmodAndSalaryMustBeNumbersOn0985() throws Exception {
+        String header = Fixture.SHIP_HEADER.replace("\n", ",parts/dmod,salary\n");
+        Fixture.file(mod, "data/hulls/good.ship", Fixture.hull("good", "WS1", "TURRET", ""));
+        Fixture.file(mod, "data/hulls/bad.ship", Fixture.hull("bad", "WS1", "TURRET", ""));
+        Fixture.file(mod, "data/hulls/ship_data.csv", header
+                + "Good,good,,,,,100,10,100,10,10,0,100,100,NONE,,3,\n"
+                + "Bad,bad,,,,,100,10,100,10,10,0,100,100,NONE,,2.5,lots\n");
+        Fixture.file(mod, "data/hulls/skins/bad_skin.skin", "{\"baseHullId\":\"good\",\"skinHullId\":\"bad_skin\","
+                + "\"spriteName\":\"graphics/ui/logo.png\",\"parts/dmod\":\"two\"}");
+        Report r = game.run();
+        assertNotNull(find(r, Report.Severity.ERROR, "\"parts/dmod\" is \"2.5\", not a whole number"), dump(r));
+        assertNotNull(find(r, Report.Severity.ERROR, "\"salary\" is \"lots\", not a number"), dump(r));
+        assertNotNull(find(r, Report.Severity.ERROR, "\"parts/dmod\" is \"two\", not a number"), dump(r));
+        assertNull(find(r, Report.Severity.ERROR, "\"3\""), dump(r));
+
+        game.version("0.98a-RC8");
+        Report old = game.run();
+        assertNull(find(old, Report.Severity.ERROR, "parts/dmod"), dump(old));
+    }
+
+    @Test
+    void newHintsAreKnownOnlyOn0985() throws Exception {
+        Fixture.file(mod, "data/hulls/dom.ship", Fixture.hull("dom", "WS1", "TURRET", ""));
+        Fixture.file(mod, "data/hulls/ship_data.csv", "name,id,hints,mass,shield type\n"
+                + "Dom,dom,\"COMBAT, DO_NOT_TURN_TO_ARMOR\",100,NONE\n");
+        String gun = Fixture.weapon("low_gun", "1,0", "0", "1,0", "0");
+        addWeapon("low_gun", gun.substring(0, gun.length() - 1) + ",\"renderHints\":[\"RENDER_MISSILES_BELOW\"]}");
+        Report r = game.run();
+        assertNull(find(r, Report.Severity.ERROR, "DO_NOT_TURN_TO_ARMOR"), dump(r));
+        assertNull(find(r, Report.Severity.ERROR, "RENDER_MISSILES_BELOW"), dump(r));
+
+        game.version("0.98a-RC8");
+        Report old = game.run();
+        assertNotNull(find(old, Report.Severity.ERROR, "DO_NOT_TURN_TO_ARMOR"), dump(old));
+        assertNotNull(find(old, Report.Severity.ERROR, "RENDER_MISSILES_BELOW"), dump(old));
+    }
+
+    @Test
+    void gameVersionIsReadFromTheGameJar() throws Exception {
+        assertEquals("0.98.5a-RC6", GameInstall.at(game.root).version());
+        assertTrue(GameInstall.atLeast0985("0.98.5a-RC6"));
+        assertTrue(GameInstall.atLeast0985("0.99a"));
+        assertTrue(GameInstall.atLeast0985("1.0a"));
+        assertTrue(GameInstall.atLeast0985(null));
+        assertTrue(!GameInstall.atLeast0985("0.98a-RC8"));
+        assertTrue(!GameInstall.atLeast0985("0.97a-RC11"));
     }
 
     @Test
@@ -280,7 +394,7 @@ class CheckerTest {
     @Test
     void csvReaderMatchesTheGame() {
         String text = "id,name,desc\n#comment,row,x\n\na,\"Quoted, name\",\"say \"\"hi\"\"\"\nb,plain,\"two\nlines\"\nc,short\n";
-        GameCsv.Table t = GameCsv.parse(text.getBytes(StandardCharsets.UTF_8));
+        GameCsv.Table t = GameCsv.parse(text.getBytes(StandardCharsets.UTF_8), true);
         assertNull(t.error);
         assertEquals(3, t.rows.size());
         assertEquals("Quoted, name", t.rows.get(0).get("name"));

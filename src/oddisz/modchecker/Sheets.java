@@ -84,7 +84,10 @@ final class Sheets {
                 continue;
             }
             if (t.rows.isEmpty()) continue;
-            if (t.bom) {
+            if (t.bom && c.v0985) {
+                // 0.98.5a removes the BOM before reading the sheet; 0.98a reads it as part of the first column name.
+                if (!hit.source().isCore()) f.warning(Checker.BOM_SKIPPED);
+            } else if (t.bom) {
                 f.error("The file starts with a UTF-8 BOM (an invisible marker some editors add), so the game reads the first"
                         + " column name as \"\\uFEFF" + t.header.get(0) + "\". " + CRASH + " Save it as UTF-8 without BOM.");
                 continue;
@@ -242,9 +245,18 @@ final class Sheets {
                         + " The game ignores the row.");
                 continue;
             }
-            enumCell(e, "hints", Enums.SHIP_HINT);
+            enumCell(e, "hints", Enums.shipHints(c.v0985));
             requiredEnum(e, "shield type", Enums.SHIELD_TYPE);
             requiredNumber(e, "mass");
+            if (c.v0985) {
+                partsPerDmod(e);
+                // 0.98.5a: a "salary" that is not blank is read with getInt.
+                String salary = e.row.get("salary");
+                if (salary != null && !salary.isBlank() && !number(salary)) {
+                    fields(c, e).error(at(e) + "\"salary\" is \"" + salary + "\", not a number. " + CRASH
+                            + " (JSONObject[\"salary\"] is not a number)");
+                }
+            }
         }
         for (Checker.Spec hull : c.hulls.values()) {
             if (rows.containsKey(hull.id)) continue;
@@ -255,6 +267,95 @@ final class Sheets {
         }
         // Ship systems are loaded after this sheet; their references are checked in shipSystems().
         hullRows = rows;
+    }
+
+    /**
+     * 0.98.5a: a "parts/dmod" cell that is not blank goes through Integer.parseInt, which takes only a whole
+     * number with no spaces or decimal point (ShipHullSpreadsheetLoader).
+     */
+    private void partsPerDmod(Entry e) {
+        String v = e.row.get("parts/dmod");
+        if (v == null || v.isBlank()) return;
+        boolean whole = v.matches("[+-]?[0-9]{1,10}");
+        if (whole) {
+            long n = Long.parseLong(v);
+            whole = n >= Integer.MIN_VALUE && n <= Integer.MAX_VALUE;
+        }
+        if (!whole) {
+            fields(c, e).error(at(e) + "\"parts/dmod\" is \"" + v + "\", not a whole number. " + CRASH
+                    + " (NumberFormatException: For input string: \"" + v + "\")");
+        }
+    }
+
+    // ---------------------------------------------------------------- rules files
+
+    /**
+     * The rules (dialog) files. 0.98a reads only data/campaign/rules.csv; 0.98.5a reads every path in the
+     * merged settings.json "rules" list (the base game lists rules.csv and rules/askoniaCrisis2.csv), in
+     * that order. Each path is a sheet read by id like the others (com.fs.starfarer.campaign.rules.Rules):
+     * copies in several mods are merged, a repeated id in one file crashes, and every row needs the
+     * columns trigger, conditions, options and script (getString). Two files of the list that hold the
+     * same rule id for the same trigger crash with "Duplicate rule id".
+     */
+    void rules() {
+        List<String> paths = new ArrayList<>();
+        if (c.v0985) {
+            Checker.Spec settings = c.effective("data/config/settings.json");
+            org.json.JSONArray list = settings == null ? null : settings.json.optJSONArray("rules");
+            for (int i = 0; list != null && i < list.length(); i++) {
+                String path = FileIndex.normalize(list.optString(i, ""));
+                if (path.isEmpty() || path.equals("core_clearArray")) continue;
+                if (paths.stream().noneMatch(path::equalsIgnoreCase)) paths.add(path);
+            }
+        } else {
+            paths.add("data/campaign/rules.csv");
+        }
+        Map<String, String> firstFile = new HashMap<>();
+        for (String path : paths) {
+            c.rulesFiles.add(path.toLowerCase(java.util.Locale.ROOT));
+            if (c.files.find(path).isEmpty()) {
+                missingRulesFile(path);
+                continue;
+            }
+            for (Entry e : load(path, List.of("id"))) {
+                String id = e.row.get("id");
+                if (id.startsWith("#")) continue;
+                boolean complete = true;
+                for (String column : new String[] {"trigger", "conditions", "options", "script"}) {
+                    if (e.row.get(column) == null) {
+                        requiredColumn(e, column);
+                        complete = false;
+                    }
+                }
+                if (!complete) continue;
+                String key = e.row.get("trigger") + "|" + id;
+                String earlier = firstFile.putIfAbsent(key, path);
+                if (earlier != null && !earlier.equalsIgnoreCase(path)) {
+                    fields(c, e).error(at(e) + "the rule \"" + id + "\" for the trigger \"" + e.row.get("trigger") + "\" is also in "
+                            + earlier + ", another file of the settings.json \"rules\" list. " + CRASH + " (Duplicate rule id: "
+                            + id + ")");
+                }
+            }
+        }
+    }
+
+    /** A path in the "rules" list that no mod and not the base game has: the game reads nothing from it. */
+    private void missingRulesFile(String path) {
+        Source owner = c.core;
+        outer:
+        for (FileIndex.Hit hit : c.files.find("data/config/settings.json")) {
+            org.json.JSONObject o = c.parse(hit.source(), hit.path(), null, null);
+            org.json.JSONArray list = o == null ? null : o.optJSONArray("rules");
+            for (int i = 0; list != null && i < list.length(); i++) {
+                if (FileIndex.normalize(list.optString(i, "")).equalsIgnoreCase(path)) {
+                    owner = hit.source();
+                    break outer;
+                }
+            }
+        }
+        c.report.warning(owner, "data/config/settings.json", "The settings.json \"rules\" list names \"" + path + "\", but no"
+                + " enabled mod and not the base game has that file. The game loads no rules from it, so the dialogs it"
+                + " should hold do not appear.");
     }
 
     // ---------------------------------------------------------------- ship_systems.csv
@@ -338,6 +439,7 @@ final class Sheets {
     // ---------------------------------------------------------------- the other sheets
 
     void runLate() {
+        rules();
         for (Map.Entry<String, List<String>> sheet : KEYED.entrySet()) {
             if (loadedSheets.contains(sheet.getKey())) continue;
             List<Entry> entries = load(sheet.getKey(), sheet.getValue());

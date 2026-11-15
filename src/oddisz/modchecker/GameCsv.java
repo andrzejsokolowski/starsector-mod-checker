@@ -6,7 +6,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Starsector's CSV reader (com.fs.starfarer.loading.G), line for line, plus line numbers. The header is
+ * Starsector's CSV reader (com.fs.starfarer.loading.G in 0.98a, loading.oOoO in 0.98.5a, unchanged),
+ * line for line, plus line numbers. The header is
  * split on every comma, quotes in it are stripped. A row whose first character is '#' is a comment, an
  * empty line is skipped, "" inside quotes is one quote, and an unclosed quote is a fatal error.
  */
@@ -32,10 +33,12 @@ final class GameCsv {
         boolean bom;
     }
 
-    static Table parse(byte[] bytes) {
+    /** With {@code stripBom} (0.98.5a and newer) a leading BOM is removed first, as the game does. */
+    static Table parse(byte[] bytes, boolean stripBom) {
         Table table = new Table();
         table.bom = GameJson.hasBom(bytes);
         String text = GameJson.text(bytes);
+        if (stripBom && text.startsWith("\uFEFF")) text = text.substring(1);
         int firstBreak = text.indexOf('\n');
         if (firstBreak == -1 || text.length() <= firstBreak + 1) return table;
 

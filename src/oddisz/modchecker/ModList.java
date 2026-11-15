@@ -26,9 +26,9 @@ final class ModList {
     private ModList() {
     }
 
-    static ModList scan(Path modsDir, boolean allMods, Report report) throws IOException {
+    static ModList scan(Path modsDir, boolean allMods, Report report, boolean stripBom) throws IOException {
         ModList list = new ModList();
-        Set<String> enabledIds = readEnabledIds(modsDir, allMods, report);
+        Set<String> enabledIds = readEnabledIds(modsDir, allMods, report, stripBom);
 
         List<Path> folders = new ArrayList<>();
         if (Files.isDirectory(modsDir)) {
@@ -46,7 +46,7 @@ final class ModList {
                 checkNested(folder, report);
                 continue;
             }
-            Source.ModInfo mod = readModInfo(folder, info, report);
+            Source.ModInfo mod = readModInfo(folder, info, report, stripBom);
             if (mod == null) continue;
             boolean wanted = enabledIds == null || enabledIds.contains(mod.id);
             if (!wanted) continue;
@@ -86,14 +86,14 @@ final class ModList {
         return list;
     }
 
-    private static Set<String> readEnabledIds(Path modsDir, boolean allMods, Report report) throws IOException {
+    private static Set<String> readEnabledIds(Path modsDir, boolean allMods, Report report, boolean stripBom) throws IOException {
         if (allMods) return null;
         Path file = modsDir.resolve("enabled_mods.json");
         if (!Files.isRegularFile(file)) {
             report.warning(null, "enabled_mods.json", "mods/enabled_mods.json was not found, so every mod in the folder was checked.");
             return null;
         }
-        GameJson.Parsed parsed = GameJson.parse(Files.readAllBytes(file));
+        GameJson.Parsed parsed = GameJson.parse(Files.readAllBytes(file), stripBom);
         if (parsed.object == null) {
             report.error(null, "enabled_mods.json", "The game cannot read mods/enabled_mods.json: "
                     + GameJson.cleanError(parsed.error) + ". Every mod in the folder was checked instead.");
@@ -132,10 +132,11 @@ final class ModList {
         }
     }
 
-    private static Source.ModInfo readModInfo(Path folder, Path info, Report report) throws IOException {
+    private static Source.ModInfo readModInfo(Path folder, Path info, Report report, boolean stripBom) throws IOException {
         byte[] bytes = Files.readAllBytes(info);
-        GameJson.Parsed parsed = GameJson.parse(bytes);
+        GameJson.Parsed parsed = GameJson.parse(bytes, stripBom);
         Source pseudo = new Source(folder.getFileName().toString(), folder, null);
+        if (parsed.object != null && parsed.bom) report.warning(pseudo, "mod_info.json", Checker.BOM_SKIPPED);
         if (parsed.object == null) {
             report.error(pseudo, "mod_info.json", "The game cannot read this file, so the mod does not appear in the launcher: "
                     + GameJson.cleanError(parsed.error) + where(parsed.errorLine));

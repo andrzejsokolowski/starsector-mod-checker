@@ -1,4 +1,4 @@
-Starsector Mod Checker 1.0.1
+Starsector Mod Checker 1.1.0
 ============================
 
 Finds the mod files that crash Starsector or break it, before you play. It reads
@@ -44,8 +44,9 @@ brackets, so you can match it with a crash in starsector.log.
 
 What it checks
 --------------
-- Files the game cannot read: JSON with // comments, a missing comma, the same key
-  twice or a UTF-8 BOM, and CSV sheets with an unclosed quote or the same id twice.
+- Files the game cannot read: JSON with // comments, a missing comma or the same key
+  twice, and CSV sheets with an unclosed quote or the same id twice. A UTF-8 BOM is
+  an error on 0.98a and a warning on 0.98.5a, which skips it.
 - Weapons (.wpn): the barrel lists (more angles than barrels crashes at startup,
   more hardpoint barrels than turret barrels crashes in hidden slots), required
   fields, allowed values, art, animation frames and the projectile they fire.
@@ -53,7 +54,8 @@ What it checks
   variants (.variant): required fields, allowed values, art, and every weapon,
   hull, hull mod, fighter wing and variant they name.
 - The CSV sheets the game reads by id: ship_data, weapon_data, wing_data,
-  hull_mods, ship_systems, descriptions and the campaign sheets.
+  hull_mods, ship_systems, descriptions, the campaign sheets and the rules files
+  (rules.csv, and on 0.98.5a every file the settings.json "rules" list names).
 - Classes named in data (hull mod scripts, weapon effects, plugins), the jars each
   mod lists, and jars built for a newer Java than your game runs.
 - Ids written into the mods' code, such as getWeaponSpec("some_id"), that no file
@@ -62,8 +64,9 @@ What it checks
   copies of one mod, and enabled mods that are not installed.
 - File names whose upper and lower case only work on Windows.
 
-The rules come from the loading code of Starsector 0.98a. A clean report does not
-promise a crash-free game: mod code can still fail in ways no file shows.
+The rules come from the loading code of Starsector 0.98.5a and 0.98a; the tool
+reads your game version and follows its rules. A clean report does not promise a
+crash-free game: mod code can still fail in ways no file shows.
 
 
 Made by Oddisz. Uses ASM (https://asm.ow2.io), see LICENSE-ASM.txt.

@@ -23,9 +23,15 @@ Update the board during the work, not only at release time.
 the staging folder `StarsectorModChecker/`. ASM is bundled into `mod-checker.jar`; `json.jar` is
 not, it is loaded from the player's install at run time.
 
-Run it on the real install: `D:/Games/StarSector/jre/bin/java -jar build/libs/mod-checker.jar
---game D:/Games/StarSector --notes`. Andrzej's game starts, so any ERROR that says "crashes while
-loading" on that install is a false positive in a rule: fix the rule.
+Run it on the real installs: `D:/Games/StarSector0985/jre/bin/java -jar build/libs/mod-checker.jar
+--game D:/Games/StarSector0985 --notes` (0.98.5a) and the same with `D:/Games/StarSector` (0.98a).
+Andrzej's games start, so any ERROR that says "crashes while loading" on those installs is a false
+positive in a rule: fix the rule.
+
+Game versions: `GameInstall.version()` reads the version from `starfarer_obf.jar`
+(`com.fs.starfarer.Version`), and `Checker.v0985` switches the 0.98.5a loader changes on (BOM
+skipped, settings.json `rules` list, core_clearArray marker dropped, ship_data/skin `parts/dmod` and
+`salary`, two new hints). An unknown version counts as the newest.
 
 ## Layout
 
@@ -37,7 +43,7 @@ loading" on that install is a false positive in a rule: fix the rule.
 - `Rules` - .proj, .wpn, .ship, .skin, .system, .variant in load order; `Sheets` - the CSVs;
   `Extras` - every other data file, art references, unread folders; `CodeScan` - ids written into
   mod jars (ASM); `ClassIndex` - classes and jar Java versions.
-- `Enums` - allowed values, read from the 0.98a classes.
+- `Enums` - allowed values, read from the 0.98a classes, plus the names 0.98.5a adds.
 
 Severity: ERROR only for what the game's code certainly does at load (or in combat for content
 that is mounted). Things that crash only when some content is used are WARNING. Harmless or

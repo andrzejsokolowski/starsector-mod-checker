@@ -5,8 +5,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * The names the game accepts for fixed-choice fields, read from Starsector 0.98a's own classes. The
- * game looks these up with Enum.valueOf, so spelling and upper case must match exactly.
+ * The names the game accepts for fixed-choice fields, read from Starsector 0.98a's own classes and
+ * compared with 0.98.5a's (which adds one weapon render hint and one ship hint). The game looks these
+ * up with Enum.valueOf, so spelling and upper case must match exactly.
  */
 final class Enums {
     private Enums() {
@@ -14,6 +15,20 @@ final class Enums {
 
     static Set<String> of(String... names) {
         return new LinkedHashSet<>(List.of(names));
+    }
+
+    private static Set<String> plus(Set<String> base, String... more) {
+        Set<String> all = new LinkedHashSet<>(base);
+        all.addAll(List.of(more));
+        return all;
+    }
+
+    static Set<String> renderHints(boolean v0985) {
+        return v0985 ? RENDER_HINT_0985 : RENDER_HINT;
+    }
+
+    static Set<String> shipHints(boolean v0985) {
+        return v0985 ? SHIP_HINT_0985 : SHIP_HINT;
     }
 
     static final Set<String> WEAPON_TYPE = of("BALLISTIC", "ENERGY", "MISSILE", "LAUNCH_BAY", "UNIVERSAL", "HYBRID",
@@ -28,6 +43,8 @@ final class Enums {
     static final Set<String> ANIMATION_TYPE = of("NONE", "GLOW", "MUZZLE_FLASH", "GLOW_AND_FLASH", "SMOKE");
     static final Set<String> RENDER_HINT = of("RENDER_BARREL_BELOW", "RENDER_LOADED_MISSILES",
             "RENDER_LOADED_MISSILES_UNLESS_HIDDEN", "RENDER_ADDITIVE", "SUSPEND_RECOIL", "NEVER_RENDER_IN_CAMPAIGN");
+    /** 0.98.5a adds RENDER_MISSILES_BELOW (loading.specs.BaseWeaponSpec$o). */
+    static final Set<String> RENDER_HINT_0985 = plus(RENDER_HINT, "RENDER_MISSILES_BELOW");
     static final Set<String> BEAM_TEXTURE = of("SMOOTH", "MEDIUM", "ROUGH", "CHUNKY", "ROUGH2", "WEAVE", "LASER");
     static final Set<String> PROJ_BEHAVIOR = of("PROXIMITY_FUSE", "MIRV", "CUSTOM");
     static final Set<String> MISSILE_TYPE = of("FLARE", "FLARE_SEEKER", "MOTE", "FLARE_JAMMER", "ROCKET", "MISSILE",
@@ -43,6 +60,8 @@ final class Enums {
             "INDEPENDENT_ROTATION", "ALWAYS_PANIC", "WEAPONS_FRONT_TO_BACK", "WEAPONS_BACK_TO_FRONT",
             "DO_NOT_SHOW_MODULES_IN_FLEET_LIST", "RENDER_ENGINES_BELOW_HULL", "NEVER_DODGE_MISSILES",
             "MISSILE_HARDPOINTS_ROTATE", "NO_NEURAL_LINK", "PHASE", "PLAY_FIGHTER_OVERLOAD_SOUNDS");
+    /** 0.98.5a adds DO_NOT_TURN_TO_ARMOR (ShipHullSpecAPI.ShipTypeHints); the base game Dominator and Brawler use it. */
+    static final Set<String> SHIP_HINT_0985 = plus(SHIP_HINT, "DO_NOT_TURN_TO_ARMOR");
     static final Set<String> WEAPON_GROUP = of("LINKED", "ALTERNATING");
     static final Set<String> DAMAGE_TYPE = of("KINETIC", "HIGH_EXPLOSIVE", "FRAGMENTATION", "ENERGY", "OTHER");
     static final Set<String> AI_HINT = of("PD", "PD_ONLY", "PD_ALSO", "USE_VS_FRIGATES", "STRIKE", "DANGEROUS", "BOMB",

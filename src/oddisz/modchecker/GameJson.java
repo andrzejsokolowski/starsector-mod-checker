@@ -11,9 +11,10 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 /**
- * Reads JSON the way Starsector 0.98a does (com.fs.starfarer.loading.LoadingUtils): drop every '#'
- * comment outside a string, then hand the text to the game's own org.json. Also merges copies of one
- * file from several mods with the game's rules.
+ * Reads JSON the way Starsector does (com.fs.starfarer.loading.LoadingUtils): drop every '#' comment
+ * outside a string, then hand the text to the game's own org.json. Also merges copies of one file from
+ * several mods with the game's rules. 0.98.5a also drops a leading byte-order mark (BOM) before parsing;
+ * 0.98a does not, so there a BOM makes the file unreadable.
  */
 final class GameJson {
     private static final Pattern LINE = Pattern.compile("line (\\d+)\\]");
@@ -39,10 +40,15 @@ final class GameJson {
         return new String(bytes, StandardCharsets.UTF_8).replace("\r", "");
     }
 
-    static Parsed parse(byte[] bytes) {
+    /**
+     * With {@code stripBom} (0.98.5a and newer) a leading BOM is removed first, as the game's text reader
+     * does since 0.98.5a.
+     */
+    static Parsed parse(byte[] bytes, boolean stripBom) {
         Parsed result = new Parsed();
         result.bom = hasBom(bytes);
         String raw = text(bytes);
+        if (stripBom && raw.startsWith("\uFEFF")) raw = raw.substring(1);
         String stripped = stripComments(raw);
         try {
             result.object = new JSONObject(stripped);
@@ -113,8 +119,12 @@ final class GameJson {
      * same path: arrays are appended (or cleared by a leading "core_clearArray"), 4-number colour arrays
      * are replaced, objects merge key by key, and plain values overwrite as text. A value whose kind
      * differs between the copies makes the game crash; those keys go into {@code conflicts}.
+     *
+     * With {@code dropClearMarker} (0.98.5a and newer) the "core_clearArray" entry itself is not copied
+     * into the merged list. 0.98a copies it, so there the list keeps "core_clearArray" as its first entry.
      */
-    static void merge(JSONObject master, JSONObject overlay, String path, List<String> conflicts) throws JSONException {
+    static void merge(JSONObject master, JSONObject overlay, String path, List<String> conflicts, boolean dropClearMarker)
+            throws JSONException {
         Iterator<?> keys = overlay.sortedKeys();
         while (keys.hasNext()) {
             String key = (String) keys.next();
@@ -135,14 +145,14 @@ final class GameJson {
                     master.put(key, new JSONArray());
                     target = master.getJSONArray(key);
                 }
-                for (int i = 0; i < array.length(); i++) target.put(array.get(i));
+                for (int i = clear && dropClearMarker ? 1 : 0; i < array.length(); i++) target.put(array.get(i));
             } else if (object != null) {
                 if (master.has(key) && master.optJSONObject(key) == null) {
                     conflicts.add(where + " is a block ({...}) here but not in the other copy");
                     continue;
                 }
                 if (!master.has(key)) master.put(key, new JSONObject());
-                merge(master.getJSONObject(key), object, where, conflicts);
+                merge(master.getJSONObject(key), object, where, conflicts, dropClearMarker);
             } else {
                 master.put(key, overlay.optString(key));
             }

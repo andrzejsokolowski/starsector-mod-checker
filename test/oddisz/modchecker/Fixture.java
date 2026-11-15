@@ -18,6 +18,7 @@ final class Fixture {
     static final String WEAPON_HEADER = "name,id,tier,type,hints\n";
     static final String WING_HEADER = "id,variant,tags,formation,num,role,role desc,refit\n";
     static final String HULLMOD_HEADER = "name,id,cost_frigate,cost_dest,cost_cruiser,cost_capital,script\n";
+    static final String RULES_HEADER = "id,trigger,conditions,script,text,options,notes\n";
 
     final Path root;
     final Path core;
@@ -31,7 +32,10 @@ final class Fixture {
         Files.createDirectories(mods);
         Files.copy(realJsonJar(), mk(core.resolve("json.jar")));
         jar(core.resolve("starfarer.api.jar"), "com/fs/starfarer/api/Placeholder.class", new byte[] {(byte) 0xCA, (byte) 0xFE, 0, 0, 0, 0, 0, 61});
-        coreFile("data/config/settings.json", "{\"graphics\":{\"ui\":{\"logo\":\"graphics/ui/logo.png\"}},\"plugins\":{}}");
+        coreFile("data/config/settings.json", "{\"graphics\":{\"ui\":{\"logo\":\"graphics/ui/logo.png\"}},\"plugins\":{},"
+                + "\"rules\":[\"data/campaign/rules.csv\"]}");
+        coreFile("data/campaign/rules.csv", RULES_HEADER + "coreGreeting,OpenInteractionDialog,,,Hello.,,\n");
+        version("0.98.5a-RC6");
         coreFile("graphics/ui/logo.png", "png");
         coreFile("data/config/hull_styles.json", "{\"LOW_TECH\":{\"shieldRingColor\":[1,2,3,4]}}");
         coreFile("data/config/engine_styles.json", "{\"CORE_ENGINE\":{}}");
@@ -41,6 +45,15 @@ final class Fixture {
         coreFile("data/hulls/wing_data.csv", WING_HEADER);
         coreFile("data/hullmods/hull_mods.csv", HULLMOD_HEADER + "Core Mod,core_mod,1,2,3,4,data.hullmods.CoreMod\n");
         coreFile("data/hullmods/CoreMod.java", "class CoreMod {}");
+    }
+
+    /**
+     * Sets the game version the checker reads: a starfarer_obf.jar whose com/fs/starfarer/Version.class
+     * holds the text "Starsector <version>", like the real one's versionString constant.
+     */
+    void version(String version) throws IOException {
+        jar(core.resolve("starfarer_obf.jar"), "com/fs/starfarer/Version.class",
+                ("....versionString...Starsector " + version + "...").getBytes(StandardCharsets.ISO_8859_1));
     }
 
     static Path realJsonJar() {
