@@ -32,21 +32,21 @@ Some Mod  (id some_mod, version 1.2, folder mods/Some Mod-1.2)
 [list]
 [li][b]ERROR:[/b] the game crashes or will not start because of it.[/li]
 [li][b]WARNING:[/b] can crash the game or break something once that ship, weapon or event shows up.[/li]
-[li][b]NOTE:[/b] works, but looks like a mistake. In the saved report, and on screen with --notes.[/li]
+[li][b]NOTE:[/b] works, but looks like a mistake. Only listed with --notes.[/li]
 [/list]
 Every line ends with the game's own error text in brackets, so you can match it to a crash in starsector.log and see which mod to blame.
 
 [hr][center][size=12pt][b]What It Checks[/b][/size][/center][hr]
 [list]
-[li]Files the game cannot read: a missing comma, // comments, a key written twice, an unclosed quote or the same id twice in a CSV sheet. An invisible UTF-8 BOM is an error on 0.98a and a warning on 0.98.5a, which skips it.[/li]
+[li]Files the game cannot read: a missing comma, // comments, a key written twice, an unclosed quote or the same id twice in a CSV sheet. An invisible UTF-8 BOM is an error on 0.98a; 0.98.5a skips it.[/li]
 [li]Weapons: barrel lists (more angles than barrels crashes at startup, more hardpoint barrels than turret barrels crashes in hidden slots), required fields, allowed values, missing art and animation frames, and the projectile they fire.[/li]
 [li]Projectiles, hulls, skins, ship systems and variants: required fields, allowed values, missing art, and every weapon, hull, hull mod, fighter wing and variant they name.[/li]
 [li]The sheets the game reads by id: ship_data, weapon_data, wing_data, hull_mods, ship_systems, descriptions, the campaign sheets and the rules (dialog) files.[/li]
 [li]Classes named in data files and the jars each mod lists, including jars built for a newer Java than your game runs.[/li]
-[li]Ids written into the mods' code, such as getWeaponSpec("some_id"), that no file defines.[/li]
-[li]Files in folders the game never reads, mods unzipped one folder too deep, two copies of one mod, and enabled mods that are not installed.[/li]
-[li]File names whose upper and lower case only work on Windows, which breaks the mod for Linux and macOS players.[/li]
+[li]Mods unzipped one folder too deep and two copies of one mod.[/li]
+[li]File names whose upper and lower case only work on Windows: a warning for Linux and macOS players.[/li]
 [/list]
+With --notes it also lists things that work but look like mistakes, such as ids in a mod's code that no file defines, files in folders the game never reads, and enabled mods that are not installed.
 The rules come from the loading code of Starsector 0.98.5a and 0.98a: it reads your game version and follows its rules. A clean report does not promise a crash-free game: a mod's code can still fail in ways no file shows.
 [/center]
 
@@ -62,6 +62,10 @@ The ASM library bundled inside mod-checker.jar keeps its own BSD licence (LICENS
 [/spoiler]
 
 [spoiler=Version log]
+[b]1.2.0[/b]
+[list][li]Only real problems are warnings now. These moved to notes, which are hidden unless you run it with --notes: ids in a mod's code that no file defines, broken files the game never reads, enabled mods that are no longer installed, and a UTF-8 BOM on 0.98.5a.[/li]
+[li]File names whose upper and lower case do not match are only a warning on Linux and macOS. Windows finds the file anyway.[/li]
+[li]The saved report no longer lists the notes, and the "notes hidden" line is gone.[/li][/list]
 [b]1.1.0[/b]
 [list][li]Updated for Starsector 0.98.5a.[/li]
 [li]Reads the game version from your install and follows the rules of that version. 0.98a still works.[/li]

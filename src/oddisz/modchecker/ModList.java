@@ -66,8 +66,8 @@ final class ModList {
         if (enabledIds != null) {
             for (String id : enabledIds) {
                 if (!list.byId.containsKey(id)) {
-                    report.warning(null, "enabled_mods.json", "The mod \"" + id + "\" is enabled but no folder in mods/ has a"
-                            + " mod_info.json with that id, so the game cannot load it.");
+                    report.note(null, "enabled_mods.json", "The mod \"" + id + "\" is enabled but no folder in mods/ has a"
+                            + " mod_info.json with that id. The game skips it.");
                 }
             }
         }
@@ -136,7 +136,7 @@ final class ModList {
         byte[] bytes = Files.readAllBytes(info);
         GameJson.Parsed parsed = GameJson.parse(bytes, stripBom);
         Source pseudo = new Source(folder.getFileName().toString(), folder, null);
-        if (parsed.object != null && parsed.bom) report.warning(pseudo, "mod_info.json", Checker.BOM_SKIPPED);
+        if (parsed.object != null && parsed.bom) report.note(pseudo, "mod_info.json", Checker.BOM_SKIPPED);
         if (parsed.object == null) {
             report.error(pseudo, "mod_info.json", "The game cannot read this file, so the mod does not appear in the launcher: "
                     + GameJson.cleanError(parsed.error) + where(parsed.errorLine));

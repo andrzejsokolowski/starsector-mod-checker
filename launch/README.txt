@@ -27,7 +27,7 @@ window then waits for a key before it closes.
 
 Options, when you run it from a terminal:
     --all        check every mod in the mods folder, not only the enabled ones
-    --notes      also print the notes (the saved report always has them)
+    --notes      also list the notes (things that work but look like mistakes)
     --out FILE   save the report somewhere else
     --no-report  only print, save nothing
 
@@ -46,7 +46,7 @@ What it checks
 --------------
 - Files the game cannot read: JSON with // comments, a missing comma or the same key
   twice, and CSV sheets with an unclosed quote or the same id twice. A UTF-8 BOM is
-  an error on 0.98a and a warning on 0.98.5a, which skips it.
+  an error on 0.98a; 0.98.5a skips it.
 - Weapons (.wpn): the barrel lists (more angles than barrels crashes at startup,
   more hardpoint barrels than turret barrels crashes in hidden slots), required
   fields, allowed values, art, animation frames and the projectile they fire.
@@ -58,11 +58,13 @@ What it checks
   (rules.csv, and on 0.98.5a every file the settings.json "rules" list names).
 - Classes named in data (hull mod scripts, weapon effects, plugins), the jars each
   mod lists, and jars built for a newer Java than your game runs.
-- Ids written into the mods' code, such as getWeaponSpec("some_id"), that no file
-  defines.
-- Files in folders the game never reads, mods unzipped one folder too deep, two
-  copies of one mod, and enabled mods that are not installed.
-- File names whose upper and lower case only work on Windows.
+- Mods unzipped one folder too deep and two copies of one mod.
+- File names whose upper and lower case only work on Windows (a warning on Linux
+  and macOS).
+
+With --notes it also lists things that work but look like mistakes: ids written
+into the mods' code, such as getWeaponSpec("some_id"), that no file defines,
+files in folders the game never reads, and enabled mods that are not installed.
 
 The rules come from the loading code of Starsector 0.98.5a and 0.98a; the tool
 reads your game version and follows its rules. A clean report does not promise a

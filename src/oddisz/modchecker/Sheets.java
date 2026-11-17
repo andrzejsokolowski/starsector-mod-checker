@@ -86,7 +86,7 @@ final class Sheets {
             if (t.rows.isEmpty()) continue;
             if (t.bom && c.v0985) {
                 // 0.98.5a removes the BOM before reading the sheet; 0.98a reads it as part of the first column name.
-                if (!hit.source().isCore()) f.warning(Checker.BOM_SKIPPED);
+                if (!hit.source().isCore()) f.note(Checker.BOM_SKIPPED);
             } else if (t.bom) {
                 f.error("The file starts with a UTF-8 BOM (an invisible marker some editors add), so the game reads the first"
                         + " column name as \"\\uFEFF" + t.header.get(0) + "\". " + CRASH + " Save it as UTF-8 without BOM.");

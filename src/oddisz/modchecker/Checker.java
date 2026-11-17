@@ -114,9 +114,9 @@ public final class Checker {
             Path out = options.outPath != null ? Paths.get(options.outPath)
                     : (toolDir != null ? Paths.get(toolDir) : Paths.get("")).resolve("mod-checker-report.txt");
             try {
-                Files.write(out, checker.report.render(checker.header(), true).getBytes(StandardCharsets.UTF_8));
+                Files.write(out, text.getBytes(StandardCharsets.UTF_8));
                 System.out.println();
-                System.out.println("Report saved to " + out.toAbsolutePath() + " (it also lists the notes).");
+                System.out.println("Report saved to " + out.toAbsolutePath() + ".");
             } catch (IOException e) {
                 System.out.println();
                 System.out.println("Could not save the report to " + out.toAbsolutePath() + ": " + e.getMessage());
@@ -228,7 +228,7 @@ public final class Checker {
             parseCache.put(key, p);
         }
         if (p.object != null && p.bom && reportedBom.add(key) && !source.isCore()) {
-            report.warning(source, rel, BOM_SKIPPED);
+            report.note(source, rel, BOM_SKIPPED);
         }
         if (p.object == null && ifBroken != null && reportedBroken.add(key)) {
             String why = p.bom && !v0985
@@ -353,13 +353,14 @@ public final class Checker {
         }
         if (!files.exactCaseExists(path)) {
             String actual = files.find(path).get(0).path();
-            Report.Severity onThisOs = caseSensitiveFiles || ifMissing == Report.Severity.NOTE ? ifMissing : Report.Severity.WARNING;
+            // Windows ignores case, so on Windows the game finds the file: only a note there.
+            Report.Severity onThisOs = caseSensitiveFiles ? ifMissing : Report.Severity.NOTE;
             report.add(onThisOs, source, rel, field + " \"" + value
                     + "\" only matches \"" + actual + "\" when upper and lower case are ignored. Windows does that, Linux and"
                     + " macOS do not: there the file is missing. " + consequence);
         } else if (value.contains("\\")) {
-            report.warning(source, rel, field + " \"" + value + "\" uses backslashes. That only works on Windows; write"
-                    + " forward slashes (/).");
+            report.add(caseSensitiveFiles ? Report.Severity.WARNING : Report.Severity.NOTE, source, rel, field + " \"" + value
+                    + "\" uses backslashes. That only works on Windows; write forward slashes (/).");
         }
         return true;
     }

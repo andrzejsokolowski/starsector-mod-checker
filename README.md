@@ -37,17 +37,20 @@ only enabled ones), `--notes`, `--out FILE`, `--no-report`.
 ## What it checks
 
 - Files the game cannot read (JSON with `//` comments, missing commas, duplicate keys; CSV with
-  an unclosed quote or a repeated id). A UTF-8 BOM is an error on 0.98a and a warning on 0.98.5a,
-  which skips it.
+  an unclosed quote or a repeated id). A UTF-8 BOM is an error on 0.98a; 0.98.5a skips it.
 - Weapons: barrel lists, required fields, allowed values, art, animation frames, projectile ids.
 - Projectiles, hulls, skins, ship systems and variants: required fields, allowed values, art, and
   every weapon, hull, hull mod, wing and variant they name.
 - The CSV sheets the game reads by id, including the rules (dialog) files: rules.csv, and on
   0.98.5a every file the settings.json `rules` list names.
 - Classes named in data, the jars each mod lists, and jars built for a newer Java than the game.
-- Ids written into mod code (`getWeaponSpec("id")` and similar) that no file defines.
-- Files in folders the game never reads, mods unzipped one folder too deep, duplicate mods,
-  enabled mods that are not installed, and file names whose case only works on Windows.
+- File names whose case only works on Windows (a warning on Linux and macOS).
+- Mods unzipped one folder too deep and duplicate mods.
+
+With `--notes` it also lists things that work but look like mistakes: ids written into mod code
+(`getWeaponSpec("id")` and similar) that no file defines, files in folders the game never reads,
+leftover files, and enabled mods that are not installed. These are not problems for your game,
+so they are hidden unless you ask.
 
 The rules copy the loading code of Starsector 0.98.5a and 0.98a. The tool reads the game version
 from your install and follows that version's rules. A clean report does not promise a crash-free

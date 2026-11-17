@@ -13,7 +13,7 @@ import java.nio.file.Paths;
  * loaded before json.jar is on the class path.
  */
 public final class Main {
-    public static final String VERSION = "1.1.0";
+    public static final String VERSION = "1.2.0";
     /** Exit code when no Starsector folder was found: the launchers then ask the player for it. */
     static final int GAME_NOT_FOUND = 3;
 

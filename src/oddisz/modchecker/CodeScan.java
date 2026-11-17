@@ -374,7 +374,9 @@ final class CodeScan {
         } else if (guarded) {
             f.note(text + consequence + " The method also checks for other mods or catches errors, so this is probably handled.");
         } else {
-            f.warning(text + consequence);
+            // Only a guess: the scan cannot tell whether that code ever runs, and on real installs it mostly does not
+            // (leftover classes, unused systems). So it is a note, not a warning.
+            f.note(text + consequence);
         }
     }
 

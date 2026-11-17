@@ -51,7 +51,7 @@ final class Report {
     /** The report text. Core game files only appear when something in them is actually wrong. */
     String render(String header, boolean showNotes) {
         StringBuilder out = new StringBuilder(header);
-        int errors = count(Severity.ERROR), warnings = count(Severity.WARNING), notes = count(Severity.NOTE);
+        int errors = count(Severity.ERROR), warnings = count(Severity.WARNING);
 
         Map<String, List<Problem>> byGroup = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (Problem p : problems) {
@@ -73,10 +73,8 @@ final class Report {
         nl(out);
         if (showNotes) {
             out.append("  NOTE     works, but looks like a mistake");
-        } else if (notes > 0) {
-            out.append("  (").append(plural(notes, "note")).append(" hidden: run with --notes to see them)");
+            nl(out);
         }
-        nl(out);
 
         if (byGroup.isEmpty()) return out.toString();
 

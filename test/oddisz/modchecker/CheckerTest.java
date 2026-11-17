@@ -205,7 +205,7 @@ class CheckerTest {
     }
 
     @Test
-    void bomIsOnlyAWarningOn0985() throws Exception {
+    void bomIsOnlyANoteOn0985() throws Exception {
         // 0.98.5a's text reader (LoadingUtils) drops a leading BOM from every JSON and CSV file it reads.
         Fixture.bytes(mod, "data/weapons/bom.wpn", withBom(Fixture.weapon("bom", "1,0", "0", "1,0", "0")));
         Fixture.bytes(mod, "data/weapons/weapon_data.csv", withBom(Fixture.WEAPON_HEADER + "Test,bom,0,KINETIC,\n"));
@@ -214,7 +214,7 @@ class CheckerTest {
         Report r = game.run();
         assertTrue(of(r, Report.Severity.ERROR).isEmpty(), dump(r));
         long bomWarnings = r.problems().stream()
-                .filter(p -> p.severity() == Report.Severity.WARNING && p.message().contains("0.98.5a skips it")).count();
+                .filter(p -> p.severity() == Report.Severity.NOTE && p.message().contains("0.98.5a skips it")).count();
         assertEquals(3, bomWarnings, dump(r));
         // The weapon is read through the BOM, so it keeps its weapon_data.csv row.
         assertNull(find(r, Report.Severity.NOTE, "so the game drops this weapon"), dump(r));
@@ -332,11 +332,11 @@ class CheckerTest {
     }
 
     @Test
-    void enabledModThatIsNotInstalledIsAWarning() throws Exception {
+    void enabledModThatIsNotInstalledIsANote() throws Exception {
         java.nio.file.Files.write(game.mods.resolve("enabled_mods.json"),
                 "{\"enabledMods\":[\"testmod\",\"ghost\"]}".getBytes(StandardCharsets.UTF_8));
         Report r = game.run();
-        assertNotNull(find(r, Report.Severity.WARNING, "\"ghost\" is enabled"), dump(r));
+        assertNotNull(find(r, Report.Severity.NOTE, "\"ghost\" is enabled"), dump(r));
     }
 
     // ---------------------------------------------------------------- the code scan
@@ -372,7 +372,8 @@ class CheckerTest {
         Path coded = game.mod("coded", "jars/coded.jar");
         Fixture.jar(coded.resolve("jars/coded.jar"), "test/Lookups.class", lookupClass());
         Report r = game.run();
-        Report.Problem p = find(r, Report.Severity.WARNING, "getWeaponSpec for the weapon \"nope\"");
+        // Only a guess about code that may never run, so a note.
+        Report.Problem p = find(r, Report.Severity.NOTE, "getWeaponSpec for the weapon \"nope\"");
         assertNotNull(p, dump(r));
         assertEquals("jars/coded.jar", p.path());
         assertNotNull(find(r, Report.Severity.NOTE, "checks the result for null"), dump(r));

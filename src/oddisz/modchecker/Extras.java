@@ -82,7 +82,7 @@ final class Extras {
         JSONObject o = c.parse(source, rel, null, null);
         if (o == null) {
             if (isJsonArray(bytes)) return;
-            c.parse(source, rel, loaded ? Report.Severity.ERROR : Report.Severity.WARNING,
+            c.parse(source, rel, loaded ? Report.Severity.ERROR : Report.Severity.NOTE,
                     loaded ? Fields.LOAD_CRASH : "If the game or a mod reads this file, it crashes or ignores the file.");
             return;
         }
@@ -179,7 +179,7 @@ final class Extras {
             return;
         }
         if (t.bom && !t.rows.isEmpty() && c.v0985) {
-            f.warning(Checker.BOM_SKIPPED);
+            f.note(Checker.BOM_SKIPPED);
         } else if (t.bom && !t.rows.isEmpty()) {
             f.warning("The file starts with a UTF-8 BOM (an invisible marker some editors add), so the first column is read"
                     + " as \"\\uFEFF" + t.header.get(0) + "\" instead of \"" + t.header.get(0) + "\". Save it as UTF-8 without BOM.");
